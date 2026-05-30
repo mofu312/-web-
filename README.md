@@ -51,16 +51,6 @@ library_system_web/
 └────────────────────────────────────┘
 ```
 
-### 和桌面版的区别
-
-| | 桌面版 (library_system) | 网页版 (library_system_web) |
-|------|------|------|
-| 启动方式 | 双击 bat → JavaFX 窗口 | 双击 bat → 浏览器打开 localhost:8080 |
-| 界面框架 | JavaFX | Vue 3（CDN 加载） |
-| 数据库 | TXT 文件 | SQLite（完整 SQL 支持） |
-| SQL 方式 | 无 | JdbcTemplate |
-| 包管理 | 手动复制 jar | Maven 自动拉取 |
-
 ### REST API 接口
 
 | 方法 | 路径 | 说明 |
