@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书馆管理系统</title>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+    <!-- ==================== 登录/注册 ==================== -->
+    <div v-if="!loggedIn" class="login-page">
+        <div class="login-card">
+            <h1>📚 图书馆管理系统</h1>
+            <h3>{{ isLoginMode ? '欢迎登录' : '注册新用户' }}</h3>
+
+            <input v-model="loginForm.username" placeholder="用户名" @keyup.enter="doLogin">
+            <input v-model="loginForm.password" type="password" placeholder="密码" @keyup.enter="doLogin">
+
+            <div v-if="!isLoginMode" class="radio-group">
+                <label><input type="radio" value="STUDENT" v-model="loginForm.role"> 学生</label>
+                <label><input type="radio" value="ADMIN" v-model="loginForm.role"> 管理员</label>
+            </div>
+
+            <button class="btn btn-primary" @click="isLoginMode ? doLogin() : doRegister()">
+                {{ isLoginMode ? '登  录' : '注  册' }}
+            </button>
+            <button class="btn btn-link" @click="isLoginMode=!isLoginMode; msg=''">
+                {{ isLoginMode ? '没有账号？去注册' : '已有账号？去登录' }}
+            </button>
+
+            <p :class="msgType">{{ msg }}</p>
+        </div>
+    </div>
+
+    <!-- ==================== 管理员界面 ==================== -->
+    <div v-if="loggedIn && userRole==='ADMIN'" class="main-page">
+        <header>
+            <h2>📚 图书馆管理系统 — 管理员</h2>
+            <span class="user-info">{{ username }} | <a href="#" @click.prevent="logout">退出登录</a></span>
+        </header>
+
+        <div class="tabs">
+            <button :class="{active:adminTab==='books'}" @click="adminTab='books'">图书管理</button>
+            <button :class="{active:adminTab==='readers'}" @click="adminTab='readers'">读者管理</button>
+            <button :class="{active:adminTab==='borrow'}" @click="adminTab='borrow'">借阅管理</button>
+        </div>
+
+        <!-- 图书管理 -->
+        <div v-if="adminTab==='books'">
+            <div class="toolbar">
+                <input v-model="searchKeyword" placeholder="搜索书名或作者..." @keyup.enter="searchBooks">
+                <button class="btn" @click="searchBooks">搜索</button>
+                <button class="btn" @click="loadBooks">显示全部</button>
+            </div>
+
+            <table>
+                <thead><tr><th>书号</th><th>书名</th><th>作者</th><th>总数</th><th>可借</th></tr></thead>
+                <tbody>
+                    <tr v-for="b in bookList" :key="b.isbn" @click="selectBook(b)" :class="{selected:editBook.isbn===b.isbn}">
+                        <td>{{ b.isbn }}</td><td>{{ b.title }}</td><td>{{ b.author }}</td>
+                        <td>{{ b.totalCopies }}</td><td>{{ b.availableCopies }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="form-row">
+                <input v-model="editBook.isbn" placeholder="书号">
+                <input v-model="editBook.title" placeholder="书名">
+                <input v-model="editBook.author" placeholder="作者">
+                <input v-model.number="editBook.totalCopies" type="number" placeholder="数量" min="1">
+                <button class="btn btn-primary" @click="addBook">添加</button>
+                <button class="btn" @click="updateBook" :disabled="!editBook.isbn">修改选中</button>
+                <button class="btn btn-danger" @click="deleteBook" :disabled="!editBook.isbn">删除选中</button>
+            </div>
+            <p :class="opMsgType">{{ opMsgData.text }}</p>
+        </div>
+
+        <!-- 读者管理 -->
+        <div v-if="adminTab==='readers'">
+            <table>
+                <thead><tr><th>姓名</th><th>ID</th><th>已借</th><th>上限</th></tr></thead>
+                <tbody>
+                    <tr v-for="r in readerList" :key="r.id" @click="selReader=r" :class="{selected:selReader?.id===r.id}">
+                        <td>{{ r.name }}</td><td>{{ r.id }}</td><td>{{ r.borrowedCount }}</td><td>{{ r.maxBorrow }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="form-row">
+                <input v-model="newReader.name" placeholder="姓名">
+                <input v-model="newReader.id" placeholder="ID">
+                <input v-model.number="newReader.maxBorrow" type="number" placeholder="最大借书数" min="1">
+                <button class="btn btn-primary" @click="addReader">添加</button>
+                <button class="btn btn-danger" @click="deleteReader" :disabled="!selReader">删除选中</button>
+            </div>
+            <p :class="opMsgType">{{ opMsgData.text }}</p>
+        </div>
+
+        <!-- 借阅管理 -->
+        <div v-if="adminTab==='borrow'">
+            <div class="form-row bg-blue">
+                <span>借书 →</span>
+                <input v-model="borrowForm.isbn" placeholder="书号">
+                <input v-model="borrowForm.readerId" placeholder="读者ID">
+                <select v-model="borrowForm.days">
+                    <option value="7">7天</option><option value="14">14天</option>
+                    <option value="30">30天</option><option value="60">60天</option>
+                </select>
+                <button class="btn btn-primary" @click="doBorrow">借书</button>
+            </div>
+            <div class="form-row bg-green">
+                <span>还书 →</span>
+                <input v-model="returnForm.isbn" placeholder="书号">
+                <input v-model="returnForm.readerId" placeholder="读者ID">
+                <button class="btn btn-primary" @click="doReturn">还书</button>
+            </div>
+            <p :class="opMsgType">{{ opMsgData.text }}</p>
+
+            <label style="margin-left:12px"><input type="checkbox" v-model="showOverdue"> 只显示逾期</label>
+            <button class="btn" @click="loadRecords">刷新</button>
+
+            <table>
+                <thead><tr><th>书号</th><th>读者</th><th>借出日期</th><th>应还日期</th><th>状态</th></tr></thead>
+                <tbody>
+                    <tr v-for="r in filteredRecords" :key="r.bookIsbn+r.readerId+r.borrowDate">
+                        <td>{{ r.bookIsbn }}</td><td>{{ r.readerId }}</td>
+                        <td>{{ r.borrowDate }}</td><td>{{ r.dueDate }}</td>
+                        <td>{{ r.returned ? '✅已还' : r.overdue ? '⚠️逾期'+r.overdueDays+'天' : '📖借出中' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 学生界面 ==================== -->
+    <div v-if="loggedIn && userRole==='STUDENT'" class="main-page">
+        <header>
+            <h2>📚 图书馆 — 学生端</h2>
+            <span class="user-info">{{ username }} | <a href="#" @click.prevent="logout">退出登录</a></span>
+        </header>
+
+        <div class="tabs">
+            <button :class="{active:stuTab==='search'}" @click="stuTab='search'">图书查询</button>
+            <button :class="{active:stuTab==='mine'}" @click="stuTab='mine';loadMyRecords()">我的借阅</button>
+        </div>
+
+        <div v-if="stuTab==='search'">
+            <div class="toolbar">
+                <input v-model="searchKeyword" placeholder="搜索书名或作者..." @keyup.enter="searchBooks">
+                <button class="btn" @click="searchBooks">搜索</button>
+                <button class="btn" @click="loadBooks">显示全部</button>
+            </div>
+            <table>
+                <thead><tr><th>书号</th><th>书名</th><th>作者</th><th>总数</th><th>可借</th></tr></thead>
+                <tbody>
+                    <tr v-for="b in bookList" :key="b.isbn" @dblclick="borrowForm.isbn=b.isbn">
+                        <td>{{ b.isbn }}</td><td>{{ b.title }}</td><td>{{ b.author }}</td>
+                        <td>{{ b.totalCopies }}</td><td>{{ b.availableCopies }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="form-row bg-blue">
+                <span>借书 → 书号:</span>
+                <input v-model="borrowForm.isbn" placeholder="书号">
+                <select v-model="borrowForm.days">
+                    <option value="7">7天</option><option value="14">14天</option>
+                </select>
+                <button class="btn btn-primary" @click="doBorrow">借书</button>
+            </div>
+            <div class="form-row bg-green">
+                <span>还书 → 书号:</span>
+                <input v-model="returnForm.isbn" placeholder="书号">
+                <button class="btn btn-primary" @click="doReturn">还书</button>
+            </div>
+            <p :class="opMsgType">{{ opMsgData.text }}</p>
+        </div>
+
+        <div v-if="stuTab==='mine'">
+            <label><input type="checkbox" v-model="showUnreturned"> 只显示未归还</label>
+            <button class="btn" @click="loadMyRecords">刷新</button>
+            <table>
+                <thead><tr><th>书号</th><th>借出日期</th><th>应还日期</th><th>状态</th></tr></thead>
+                <tbody>
+                    <tr v-for="r in myRecordList" :key="r.bookIsbn+r.borrowDate">
+                        <td>{{ r.bookIsbn }}</td><td>{{ r.borrowDate }}</td><td>{{ r.dueDate }}</td>
+                        <td>{{ r.returned ? '✅已还' : r.overdue ? '⚠️逾期'+r.overdueDays+'天' : '📖借出中' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

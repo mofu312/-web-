@@ -1,0 +1,16 @@
+D:\javawork\library_system_web\src\main\java\com\library\controller\AuthController.java
+D:\javawork\library_system_web\src\main\java\com\library\controller\BookController.java
+D:\javawork\library_system_web\src\main\java\com\library\controller\BorrowController.java
+D:\javawork\library_system_web\src\main\java\com\library\controller\ReaderController.java
+D:\javawork\library_system_web\src\main\java\com\library\LibraryApplication.java
+D:\javawork\library_system_web\src\main\java\com\library\model\Book.java
+D:\javawork\library_system_web\src\main\java\com\library\model\BorrowRecord.java
+D:\javawork\library_system_web\src\main\java\com\library\model\Reader.java
+D:\javawork\library_system_web\src\main\java\com\library\model\Record.java
+D:\javawork\library_system_web\src\main\java\com\library\model\User.java
+D:\javawork\library_system_web\src\main\java\com\library\repository\BookRepository.java
+D:\javawork\library_system_web\src\main\java\com\library\repository\BorrowRecordRepository.java
+D:\javawork\library_system_web\src\main\java\com\library\repository\ReaderRepository.java
+D:\javawork\library_system_web\src\main\java\com\library\repository\UserRepository.java
+D:\javawork\library_system_web\src\main\java\com\library\service\AuthService.java
+D:\javawork\library_system_web\src\main\java\com\library\service\LibraryService.java
