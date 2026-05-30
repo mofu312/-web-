@@ -34,6 +34,7 @@ public class LibraryService {
             "id INTEGER PRIMARY KEY AUTOINCREMENT, bookIsbn TEXT, readerId TEXT, " +
             "borrowDate TEXT, dueDate TEXT, returnDate TEXT, returned INTEGER)"
         );
+
     }
 
     // ===== 图书管理 =====
